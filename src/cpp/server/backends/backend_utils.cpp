@@ -145,12 +145,21 @@ namespace lemon::backends {
         upper.erase(remove_if(upper.begin(), upper.end(), [](const char& c) { return c == '-'; }), upper.end());
         std::string env = "LEMONADE_" + upper + "_BIN";
         const char* backend_bin_env = std::getenv(env.c_str());
+        
+        LOG(INFO, "BackendUtils") << "Checking env var: " << env << std::endl;
+
         if (!backend_bin_env) {
+            LOG(INFO, "BackendUtils") << "Env var " << env << " not found." << std::endl;
             return "";
         }
 
         std::string backend_bin = std::string(backend_bin_env);
-        return fs::exists(backend_bin) ? backend_bin : "";
+        LOG(INFO, "BackendUtils") << "Env var " << env << " = " << backend_bin << std::endl;
+        
+        bool exists = fs::exists(backend_bin);
+        LOG(INFO, "BackendUtils") << "fs::exists(" << backend_bin << ") returned: " << (exists ? "true" : "false") << std::endl;
+        
+        return exists ? backend_bin : "";
     }
 
     std::string BackendUtils::find_executable_in_install_dir(const std::string& install_dir, const std::string& binary_name) {
@@ -171,6 +180,7 @@ namespace lemon::backends {
             // Check if binary exists in PATH
             std::string path = utils::find_executable_in_path(spec.binary);
             if (!path.empty()) {
+                LOG(INFO, "BackendUtils") << "get_backend_binary_path returning system PATH: " << spec.binary;
                 return spec.binary;
             }
             throw std::runtime_error(spec.binary + " not found in PATH");
@@ -179,13 +189,16 @@ namespace lemon::backends {
         std::string exe_path = find_external_backend_binary(spec.recipe, backend);
 
         if (!exe_path.empty()) {
+            LOG(INFO, "BackendUtils") << "get_backend_binary_path returning external binary: " << exe_path;
             return exe_path;
         }
 
         std::string install_dir = get_install_directory(spec.recipe, backend);
+        LOG(INFO, "BackendUtils") << "Looking in install dir: " << install_dir;
         exe_path = find_executable_in_install_dir(install_dir, spec.binary);
 
         if (!exe_path.empty()) {
+            LOG(INFO, "BackendUtils") << "get_backend_binary_path returning install dir binary: " << exe_path;
             return exe_path;
         }
 
